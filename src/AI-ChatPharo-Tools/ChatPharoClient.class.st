@@ -259,3 +259,16 @@ ChatPharoClient >> parameters: anObject [
 
 	parameters := anObject
 ]
+
+{ #category : 'printing' }
+ChatPharoClient >> printOn: aStream [
+	"Generate a string representation of the receiver based on its instance variables."
+
+	super printOn: aStream.
+	aStream
+		nextPutAll: ' name: ';
+		print: name.
+	aStream
+		nextPutAll: ' description: ';
+		print: description
+]
