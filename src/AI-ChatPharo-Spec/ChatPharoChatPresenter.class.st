@@ -141,7 +141,7 @@ ChatPharoChatPresenter >> defaultLayout [
 
 	^ SpBoxLayout newVertical
 		  spacing: 10;
-		  add: (SpScrollableLayout with: scrollableMessages);
+		  add: scrollableMessages expand: true;
 		  add: attachedFilesPresenter expand: false;
 		  add: (SpBoxLayout newHorizontal
 				   spacing: 5;
@@ -218,7 +218,7 @@ thinkingPresenter phase: #finished.
 ChatPharoChatPresenter >> initializePresenters [
 
 	messageTextField := self newTextInput
-		                    placeholder: 'Type your message here...';
+		                    placeholder: 'Ask a question or type /help ';
 		                    yourself.
 
 	submitButton := self newButton
@@ -275,7 +275,7 @@ ChatPharoChatPresenter >> initializePresenters [
 
 	messagesLayout := SpBoxLayout newVertical.
 	scrollableMessages := SpPresenter new.
-	scrollableMessages layout: messagesLayout
+	scrollableMessages layout: (SpScrollableLayout with: messagesLayout). 
 ]
 
 { #category : 'initialization' }
@@ -301,7 +301,7 @@ ChatPharoChatPresenter >> reloadMessages [
 	self hideThinking.
 	self hideError.
 	messagesLayout := SpBoxLayout newVertical.
-	scrollableMessages layout: messagesLayout.
+	scrollableMessages layout: (SpScrollableLayout with: messagesLayout).
 	model messages do: [ :each | messagesLayout add: each presenter ].
 	messageTextField text: ''.
 	cancelButton visible: false.

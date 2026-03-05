@@ -474,7 +474,7 @@ ChatPharoChat >> sendMessage: aText [
 ChatPharoChat >> sendMessage: aText withAttachments: attachmentCollection [
 
 	| answer multivers promptWithMemory textWithAttachments |
-	self addUserMessage: aText withAttachments: attachmentCollection. "Build the message text including attachment information"
+	self addUserMessage: aText withAttachments: attachmentCollection. 
 	textWithAttachments := aText.
 	attachmentCollection ifNotEmpty: [
 			textWithAttachments := String streamContents: [ :stream |
@@ -490,8 +490,11 @@ ChatPharoChat >> sendMessage: aText withAttachments: attachmentCollection [
 							                       stream nextPutAll: ' ('.
 							                       stream nextPutAll: fileRef size asString.
 							                       stream nextPutAll: ' bytes)'.
-							                       stream cr. "Optionally include file content for text files"
-							                       (fileRef mimeTypes anySatisfy: [ :mime | mime beginsWith: 'text/' ]) ifTrue: [
+							                       stream cr.
+							                      (fileRef mimeTypes anySatisfy: [ :mime |
+								                        (mime respondsTo: #main)
+									                        ifTrue: [ mime main = 'text' ]
+									                        ifFalse: [ mime asString beginsWith: 'text/' ] ]) ifTrue: [
 									                       stream nextPutAll: '  Content: '.
 									                       stream cr.
 									                       stream nextPutAll: fileRef contents.
@@ -501,14 +504,14 @@ ChatPharoChat >> sendMessage: aText withAttachments: attachmentCollection [
 			answer := cache at: textWithAttachments.
 			self addAssistantMessage: answer.
 			onAnswerReceived ifNotNil: [ :blk | blk value: messages last ].
-			^ self ]. "Check if multivers mode is enabled and can execute"
+			^ self ].
 	multivers := ChatPharoSettings default multivers.
-	(multivers notNil and: [ multivers canExecute ]) ifTrue: [ ^ self sendMessageViaMultivers: textWithAttachments ]. "Standard single-agent execution"
+	(multivers notNil and: [ multivers canExecute ]) ifTrue: [ ^ self sendMessageViaMultivers: textWithAttachments ]. 
 	promptProcess := [
 		                 [
 			                 | backend |
 			                 backend := self agent.
-			                backend onToolExecution: [ :toolName | self triggerToolExecution: toolName ].
+			                 backend onToolExecution: [ :toolName | self triggerToolExecution: toolName ].
 			                 promptWithMemory := self buildPromptPrefixWithMemoryFor: textWithAttachments.
 
 			                 backend promptPrefix: promptWithMemory.
