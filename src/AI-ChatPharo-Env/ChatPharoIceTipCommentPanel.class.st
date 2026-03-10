@@ -1,0 +1,76 @@
+Class {
+	#name : 'ChatPharoIceTipCommentPanel',
+	#superclass : 'IceTipCommentPanel',
+	#category : 'AI-ChatPharo-Env-Iceberg',
+	#package : 'AI-ChatPharo-Env',
+	#tag : 'Iceberg'
+}
+
+{ #category : 'private' }
+ChatPharoIceTipCommentPanel >> appendResultText: message [
+
+	commentText text: commentText text , message
+]
+
+{ #category : 'private' }
+ChatPharoIceTipCommentPanel >> buildPrompt [
+	"Build a prompt string by iterating through the working copy diff tree roots and their children."
+
+	^ String streamContents: [ :stream |
+		self repositoryModel workingCopyDiff treeRoots do: [ :root |
+			root allChildrenDo: [ :child |
+				stream
+					<< 'On: ';
+					<< child key;
+					<< String lf.
+				child value printOnLLMQuery: stream.
+				stream
+					<< String lf;
+					<< '---';
+					<< String lf ] ] ]
+]
+
+{ #category : 'private' }
+ChatPharoIceTipCommentPanel >> commitMessageSystemPrompt [
+
+	^ String streamContents: [ :stream |
+		stream
+			<< 'You are a Pharo developer generating an Iceberg commit message based on a diff.';
+			<< String lf;
+			<< 'Follow this commit template format and return ONLY the final commit message line:';
+			<< String lf;
+			<< ChatPharoSettings default commitMessageTemplate;
+			<< String lf;
+			<< 'Pick one prefix (#feat:, #fix:, #refactor:, #chore:, #comment:) and write an imperative concise message.' ]
+]
+
+{ #category : 'private' }
+ChatPharoIceTipCommentPanel >> generateCommitMessage [
+	"Generates a commit message using the configured ChatPharo agent and displays it in the commentText."
+
+	| prompt agent chat |
+	prompt := self buildPrompt.
+	agent := ChatPharoSettings default agent.
+	agent := (agent isKindOf: ChatPharoAgent)
+				 ifTrue: [ agent copyForChat ]
+				 ifFalse: [ agent ].
+	(agent respondsTo: #systemPrompt:) ifTrue: [
+		agent systemPrompt: self commitMessageSystemPrompt ].
+	chat := ChatPharoChat new
+				 agent: agent;
+				 yourself.
+	chat whenAnswerReceivedDo: [ :message | self appendResultText: message answer ].
+	chat sendMessage: prompt
+]
+
+{ #category : 'initialization' }
+ChatPharoIceTipCommentPanel >> initializePresenters [
+
+	super initializePresenters.
+	optionsButton add: (self newToolbarButton
+			 icon: (self application iconNamed: #smallLeftFlush);
+			 label: 'Generate commit message';
+			 help: 'Generate the commit message based on the work';
+			 action: [ self generateCommitMessage ];
+			 yourself)
+]

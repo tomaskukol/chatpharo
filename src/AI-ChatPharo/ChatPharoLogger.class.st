@@ -1,3 +1,7 @@
+"
+I'm a logger for ChatPharo that saves every details you make when using the plugin. 
+you data is not sent anywhere and it's saved in your image directory.
+"
 Class {
 	#name : 'ChatPharoLogger',
 	#superclass : 'Object',

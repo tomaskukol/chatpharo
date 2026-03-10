@@ -21,6 +21,8 @@ Class {
 	#instVars : [
 		'agent',
 		'browserExtensionEnabled',
+		'icebergExtensionEnabled',
+		'commitMessageTemplate',
 		'browserToolsEnabled',
 		'maximumIterations',
 		'browserAutoTabEnabled',
@@ -97,6 +99,8 @@ ChatPharoSettings class >> loadOrNew [
 				  | settings |
 				  settings := STON fromStream: file.
 				  settings browserExtensionEnabled ifNil: [ settings browserExtensionEnabled: false ].
+				 settings icebergExtensionEnabled ifNil: [ settings icebergExtensionEnabled: false ].
+				  settings commitMessageTemplate ifNil: [ settings commitMessageTemplate: settings defaultCommitMessageTemplate ].
 				  settings browserAutoTabEnabled ifNil: [ settings browserAutoTabEnabled: true ].
 				  settings browserToolsEnabled ifNil: [
 					  settings browserToolsEnabled: (ChatPharoBrowserEnvironment new tools collect: [ :t | t name ]) asOrderedCollection ].
@@ -135,7 +139,7 @@ ChatPharoSettings class >> loadOrNew [
 				  settings memoryAutoSummarize ifNil: [ settings privateSetMemoryAutoSummarize: true ].
 				  settings mcpEnabled ifNil: [ settings privateSetMcpEnabled: false ].
 				  settings mcpRegistry ifNil: [ settings privateSetMcpRegistry: ChatPharoMCPRegistry new ].
-				settings externalApiWarningDismissed ifNil: [ settings privateSetExternalApiWarningDismissed: false ].
+				  settings externalApiWarningDismissed ifNil: [ settings privateSetExternalApiWarningDismissed: false ].
 				  ^ settings ]
 				  on: Error
 				  do: [ ^ self new ] ]
@@ -434,6 +438,20 @@ ChatPharoSettings >> cognitiveLoadBudget: aNumber [
 	self class saveDefault
 ]
 
+{ #category : 'accessing' }
+ChatPharoSettings >> commitMessageTemplate [
+
+	^ commitMessageTemplate ifNil: [ commitMessageTemplate := self defaultCommitMessageTemplate ]
+]
+
+{ #category : 'accessing' }
+ChatPharoSettings >> commitMessageTemplate: aString [
+
+	commitMessageTemplate := aString.
+	self class setDefault: self.
+	self class saveDefault
+]
+
 { #category : 'custom tools' }
 ChatPharoSettings >> customTools [
 	"Return the collection of user-defined custom tools"
@@ -459,6 +477,20 @@ ChatPharoSettings >> customToolsAsClients [
 
 	^ (self customTools select: [ :tool | tool enabled ])
 		collect: [ :tool | tool asChatPharoClient ]
+]
+
+{ #category : 'accessing' }
+ChatPharoSettings >> defaultCommitMessageTemplate [
+
+	^ '# Please enter the commit message for your changes.
+# Lines starting with # will be ignored, and an empty message aborts the commit.
+# On branch main, Fixes #
+#Please use one of those
+#feat:
+#fix:
+#refactor:
+#chore:
+#comment:'
 ]
 
 { #category : 'developer' }
@@ -640,11 +672,31 @@ ChatPharoSettings >> feedbackButtonsEnabled: aBoolean [
 ]
 
 { #category : 'initialization' }
+ChatPharoSettings >> icebergExtensionEnabled [
+
+	^ icebergExtensionEnabled ifNil: [ icebergExtensionEnabled := false ]
+]
+
+{ #category : 'initialization' }
+ChatPharoSettings >> icebergExtensionEnabled: aBoolean [
+
+	icebergExtensionEnabled := aBoolean.
+	self class setDefault: self.
+	self class saveDefault.
+	ChatPharoLogger logFrontend: 'Iceberg extension toggled'
+		details: (Dictionary new
+			at: 'enabled' put: aBoolean;
+			yourself)
+]
+
+{ #category : 'initialization' }
 ChatPharoSettings >> initialize [
 
 	super initialize.
 	agent := ChatPharoNullAgent new.
 	browserExtensionEnabled := false.
+	icebergExtensionEnabled := false.
+	commitMessageTemplate := self defaultCommitMessageTemplate.
 	browserAutoTabEnabled := true.
 	cacheEnabled := true.
 	feedbackButtonsEnabled := false.
@@ -668,7 +720,7 @@ ChatPharoSettings >> initialize [
 	memoryRetentionDays := 30.
 	memoryMaxItems := 1000.
 	memoryAutoSummarize := true.
-		mcpEnabled := false.
+	mcpEnabled := false.
 	mcpRegistry := ChatPharoMCPRegistry new.
 	ChatPharoLogger loggingEnabled: true.
 	ChatPharoLogger logSystem: 'Settings initialized' details: (Dictionary new

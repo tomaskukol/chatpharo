@@ -14,6 +14,8 @@ Class {
 		'systemPromptInput',
 		'browserExtensionCheckBox',
 		'browserExtensionPage',
+		'icebergExtensionCheckBox',
+		'icebergExtensionPage',
 		'maxIterationsInput',
 		'playgroundToolCheckBox',
 		'browserAutoTabCheckBox',
@@ -119,6 +121,10 @@ ChatPharoSettingsPresenter >> connectPresenters [
 	browserExtensionCheckBox whenChangedDo: [ :presenter |
 			model browserExtensionEnabled: presenter.
 			self updateBrowserExtensionTab ].
+		
+		icebergExtensionCheckBox whenChangedDo: [ :presenter |
+			model icebergExtensionEnabled: presenter.
+			self updateIcebergExtensionTab ].
 
 	browserAutoTabCheckBox whenChangedDo: [ :presenter | model browserAutoTabEnabled: presenter ].
 
@@ -237,6 +243,18 @@ ChatPharoSettingsPresenter >> ensureBrowserExtensionTab [
 			notebook addPage: browserExtensionPage ]
 ]
 
+{ #category : 'initialization' }
+ChatPharoSettingsPresenter >> ensureIcebergExtensionTab [
+
+	icebergExtensionPage ifNil: [
+		icebergExtensionPage := SpNotebookPage
+				title: 'Iceberg Tab'
+				icon: (self iconNamed: #branch)
+				provider: [ self newIcebergTab ].
+		notebook addPage: icebergExtensionPage ].
+	notebook selectPage: icebergExtensionPage
+]
+
 { #category : 'as yet unclassified' }
 ChatPharoSettingsPresenter >> historyTextForChats [
 
@@ -332,9 +350,15 @@ ChatPharoSettingsPresenter >> initializePresenters [
 		                      yourself.
 
 	browserExtensionCheckBox := self newCheckBox
-		                            label: 'Enable browser tab';
-		                            state: model browserExtensionEnabled;
-		                            yourself.
+			                    label: 'Enable browser tab';
+			                    state: model browserExtensionEnabled;
+			                    yourself.
+
+	icebergExtensionCheckBox := self newCheckBox
+			                    label: 'Iceberg';
+			                    state: model icebergExtensionEnabled;
+			                    yourself.
+
 
 	browserAutoTabCheckBox := self newCheckBox
 		                          label: 'Open tab on selection';
@@ -411,7 +435,8 @@ ChatPharoSettingsPresenter >> initializePresenters [
 		(model availableApiChoices detect: [ :assoc | assoc value = model agent class ] ifNone: [ model availableApiChoices first ]).
 
 	self refreshApiSettings.
-	self updateBrowserExtensionTab
+	self updateBrowserExtensionTab.
+	self updateIcebergExtensionTab
 ]
 
 { #category : 'initialization' }
@@ -567,6 +592,7 @@ ChatPharoSettingsPresenter >> newExtensionsTab [
 	^ SpPresenter new
 		  layout: (SpBoxLayout newTopToBottom
 				   add: browserExtensionCheckBox expand: false;
+				add: icebergExtensionCheckBox expand: false;
 					"add: browserAutoTabCheckBox expand: false;"
 				   yourself);
 		  yourself
@@ -584,6 +610,21 @@ ChatPharoSettingsPresenter >> newHistoryTab [
 	^ SpPresenter new
 		  layout: (SpBoxLayout newTopToBottom
 				   add: historyView;
+				   yourself);
+		  yourself
+]
+
+{ #category : 'initialization' }
+ChatPharoSettingsPresenter >> newIcebergTab [
+
+	| infoLabel |
+	infoLabel := self newLabel
+		             label: 'Iceberg integration is enabled. Open the Iceberg commit browser to generate a commit message.';
+		             yourself.
+
+	^ SpPresenter new
+		  layout: (SpBoxLayout newTopToBottom
+				   add: infoLabel expand: false;
 				   yourself);
 		  yourself
 ]
@@ -737,6 +778,14 @@ ChatPharoSettingsPresenter >> removeBrowserExtensionTab [
 ]
 
 { #category : 'initialization' }
+ChatPharoSettingsPresenter >> removeIcebergExtensionTab [
+
+	icebergExtensionPage ifNotNil: [
+		notebook removePage: icebergExtensionPage.
+		icebergExtensionPage := nil ]
+]
+
+{ #category : 'initialization' }
 ChatPharoSettingsPresenter >> saveSettings [
 
 	ChatPharoSettings setDefault: model.
@@ -755,6 +804,14 @@ ChatPharoSettingsPresenter >> updateBrowserExtensionTab [
     browserExtensionCheckBox state
         ifTrue: [ self ensureBrowserExtensionTab ]
         ifFalse: [ self removeBrowserExtensionTab ]
+]
+
+{ #category : 'initialization' }
+ChatPharoSettingsPresenter >> updateIcebergExtensionTab [
+
+	icebergExtensionCheckBox state
+		ifTrue: [ self ensureIcebergExtensionTab ]
+		ifFalse: [ self removeIcebergExtensionTab ]
 ]
 
 { #category : 'initialization' }
